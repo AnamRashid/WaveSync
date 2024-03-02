@@ -3,6 +3,7 @@ import mediapipe as mp
 import numpy as np
 import ctypes
 import pyautogui
+import time
 
 def change_gamma_values(lp_ramp, brightness):
     for i in range(256):
@@ -36,6 +37,11 @@ cap.set(cv2.CAP_PROP_FPS, 30)
 
 gesture_distance_threshold = 50
 brightness = 100
+volume_increment = 2  # Adjust volume increment/decrement value
+brightness_increment = 10  # Adjust brightness increment/decrement value
+
+last_brightness_change_time = time.time()
+last_volume_change_time = time.time()
 
 while cap.isOpened():
     try:
@@ -65,10 +71,13 @@ while cap.isOpened():
                     index_tip = landmarks[8]
                     distance = np.linalg.norm(np.array(thumb_tip) - np.array(index_tip))
 
-                    if distance < gesture_distance_threshold:
-                        pyautogui.press('volumedown')  # Decrease volume
-                    else:
-                        pyautogui.press('volumeup')  # Increase volume
+                    current_time = time.time()
+                    if current_time - last_volume_change_time >= 0.5:  # Adjust delay for volume change
+                        if distance < gesture_distance_threshold:
+                            pyautogui.press('volumedown')  # Decrease volume
+                        else:
+                            pyautogui.press('volumeup')  # Increase volume
+                        last_volume_change_time = current_time
 
                 # Index and Middle Fingers for Brightness
                 if len(landmarks) == 21:  
@@ -76,16 +85,19 @@ while cap.isOpened():
                     middle_tip = landmarks[12]
                     index_middle_distance = np.linalg.norm(np.array(index_tip) - np.array(middle_tip))
 
-                    if index_middle_distance < gesture_distance_threshold:
-                        brightness -= 10  # Decrease brightness
-                        if brightness < 0:
-                            brightness = 0
-                        set_brightness(brightness)  # Adjust brightness
-                    elif index_middle_distance > gesture_distance_threshold:
-                        brightness += 10  # Increase brightness
-                        if brightness > 255:
-                            brightness = 255
-                        set_brightness(brightness)  # Adjust brightness
+                    current_time = time.time()
+                    if current_time - last_brightness_change_time >= 0.5:  # Adjust delay for brightness change
+                        if index_middle_distance < gesture_distance_threshold:
+                            brightness -= brightness_increment  # Decrease brightness
+                            if brightness < 0:
+                                brightness = 0
+                            set_brightness(brightness)  # Adjust brightness
+                        elif index_middle_distance > gesture_distance_threshold:
+                            brightness += brightness_increment  # Increase brightness
+                            if brightness > 255:
+                                brightness = 255
+                            set_brightness(brightness)  # Adjust brightness
+                        last_brightness_change_time = current_time
 
                 mp_draw.draw_landmarks(frame, hand_landmarks, mp_hands.HAND_CONNECTIONS)
 
