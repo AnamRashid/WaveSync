@@ -16,6 +16,7 @@ while True:
 
     x, y, c = frame.shape
 
+
    
     frame = cv2.flip(frame, 1)
 
